@@ -6,12 +6,13 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="using:Task_Manager"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+    Background="{ThemeResource AcrylicBackgroundFillColorDefaultBrush}"
     mc:Ignorable="d">
 
     <controls:DataGrid
         x:Name="processGrid"
         Margin="12"
         AutoGenerateColumns="True"
+        Background="{ThemeResource AcrylicBackgroundFillColorDefaultBrush}"
         CanUserSortColumns="True" />
 </Page>
