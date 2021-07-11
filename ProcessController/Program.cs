@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,6 +17,14 @@ namespace ProcessController
 {
     class Program
     {
+        [DllImport("kernel32.dll")]
+        static extern IntPtr GetConsoleWindow();
+
+        [DllImport("user32.dll")]
+        static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+        const int SW_HIDE = 0;
+        const int SW_SHOW = 5;
 
         private static AutoResetEvent appServiceExit;
         private static AppServiceConnection connection;
@@ -24,7 +33,7 @@ namespace ProcessController
         {
             connection = new AppServiceConnection
             {
-                AppServiceName = "FilesInteropService",
+                AppServiceName = "TaskManagerInteropService",
                 PackageFamilyName = Package.Current.Id.FamilyName
             };
 
@@ -35,7 +44,6 @@ namespace ProcessController
             AppServiceConnectionStatus status = await connection.OpenAsync();
             if (status != AppServiceConnectionStatus.Success)
             {
-                // something went wrong ...
                 connection.Dispose();
                 connection = null;
             }
@@ -43,6 +51,10 @@ namespace ProcessController
 
         static void Main(string[] args)
         {
+            var handle = GetConsoleWindow();
+
+            // Hide
+            ShowWindow(handle, SW_HIDE);
             // Only one instance of the fulltrust process allowed
             // This happens if multiple instances of the UWP app are launched
             Mutex mutex;
@@ -122,7 +134,6 @@ namespace ProcessController
                     {
                         { "ProcessesInfo", stringBuilder.ToString() }
                     };
-
                     await args.Request.SendResponseAsync(responseArray);
                 }
             }
@@ -130,7 +141,7 @@ namespace ProcessController
             {
                 var responseArray = new ValueSet
                     {
-                        { "results", "" }
+                        { "ProcessesInfo", "" }
                     };
 
                 await args.Request.SendResponseAsync(responseArray);

@@ -1,8 +1,10 @@
-﻿using System;
+﻿using Microsoft.Extensions.DependencyInjection;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
+using Task_Manager.Controller;
 using Windows.ApplicationModel;
 using Windows.ApplicationModel.Activation;
 using Windows.ApplicationModel.AppService;
@@ -30,9 +32,29 @@ namespace Task_Manager
         /// </summary>
         public App()
         {
+            Services = ConfigureServices();
+            
             this.InitializeComponent();
             this.Suspending += OnSuspending;
         }
+        /// <summary>
+        /// Gets the <see cref="IServiceProvider"/> instance to resolve application services.
+        /// </summary>
+        public static IServiceProvider Services;
+        /// <summary>
+        /// Configures the services for the application.
+        /// </summary>
+        private static IServiceProvider ConfigureServices()
+        {
+            var services = new ServiceCollection();
+
+            services.AddSingleton<IProcessInfoFactory, ProcessInfoFactory>();
+
+            services.AddSingleton<IProcessController, ProcessController>();
+
+            return services.BuildServiceProvider();
+        }
+
 
         public static BackgroundTaskDeferral AppServiceDeferral = null;
         public static AppServiceConnection Connection = null;

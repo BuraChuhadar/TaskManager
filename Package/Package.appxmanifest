@@ -41,7 +41,7 @@
       </uap:VisualElements>
       <Extensions>
         <uap:Extension Category="windows.appService">
-          <uap:AppService Name="SampleInteropService" />
+          <uap:AppService Name="TaskManagerInteropService" />
         </uap:Extension>
         <desktop:Extension
           xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"

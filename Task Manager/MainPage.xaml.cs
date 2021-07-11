@@ -3,12 +3,15 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
+using Task_Manager.Controller;
 using Windows.ApplicationModel;
+using Windows.ApplicationModel.AppService;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
 using Windows.Foundation.Metadata;
 using Windows.Storage;
 using Windows.UI.Core;
+using Windows.UI.Popups;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
@@ -29,14 +32,11 @@ namespace Task_Manager
         public MainPage()
         {
             this.InitializeComponent();
+            //TODO: Not ideal for resolving dependencies find a better way:
+            ProcessController = (ProcessController)App.Services.GetService(typeof(IProcessController));
         }
 
-        private async void Button_Click(object sender, RoutedEventArgs e)
-        {
-            ValueSet response = new ValueSet();
-            response.Add("CheckProcesses", "CheckProcesses");
-            await App.Connection.SendMessageAsync(response);
-        }
+        private readonly IProcessController ProcessController;
 
         protected async override void OnNavigatedTo(NavigationEventArgs e)
         {
@@ -50,24 +50,42 @@ namespace Task_Manager
             }
         }
 
-        private void App_AppServiceDisconnected(object sender, EventArgs e)
+        private async void App_AppServiceDisconnected(object sender, EventArgs e)
         {
-            throw new NotImplementedException();
+            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+            {
+                Reconnect();
+            });
         }
 
-        private void App_AppServiceConnected(object sender, Windows.ApplicationModel.AppService.AppServiceTriggerDetails e)
+        private async void Reconnect()
         {
+            if (App.IsForeground)
+            {
+                await FullTrustProcessLauncher.LaunchFullTrustProcessForCurrentAppAsync();
+            }
+        }
 
+        private async void App_AppServiceConnected(object sender, Windows.ApplicationModel.AppService.AppServiceTriggerDetails e)
+        {
             App.Connection.RequestReceived += Connection_RequestReceived;
+            ValueSet message = new ValueSet();
+            message.Add("CheckProcesses", "CheckProcesses");
+
+            AppServiceResponse messageResponse = await App.Connection.SendMessageAsync(message);
+            var processInfo = (string)messageResponse.Message["ProcessesInfo"];
+
+            await this.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+            {
+                var result = ProcessController.ParceProcessInfos(processInfo);
+                processGrid.ItemsSource = result;
+
+            });
         }
 
         private async void Connection_RequestReceived(Windows.ApplicationModel.AppService.AppServiceConnection sender, Windows.ApplicationModel.AppService.AppServiceRequestReceivedEventArgs args)
         {
-            var processInfo = (string)args.Request.Message["ProcessesInfo"];
-            await this.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
-            {
-                txtBlock1.Text = processInfo;
-            });
+            throw new NotImplementedException();
         }
     }
 }
